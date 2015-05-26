@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# this script is based on https://github.com/jp9000/obs-studio/blob/master/INSTALL#L190 debian installation guide
+
 # CUSTOM BUILD FLAGS
 # Read more: https://wiki.gentoo.org/wiki/GCC_optimization
 # Modify these exports if you want to optimize your full obs installation for your current processor only. Compiled .deb packages dont work on any other processor if you specify -march flag for example.
@@ -40,13 +42,16 @@ fi
 # read first argument as buildlevel
 BUILDLEVEL=$1;
 
+# install required building tools
+apt-get install build-essential pkg-config cmake git checkinstall --yes
+
 # Install required *-dev packages
 apt-get install libx11-dev libgl-dev libpulse-dev libxcomposite-dev \
                 libxinerama-dev libv4l-dev libudev-dev libfreetype6-dev \
                 libfontconfig-dev qtbase5-dev libqt5x11extras5-dev libx264-dev \
-                libxcb-xinerama0-dev libxcb-shm0-dev libjack-jackd2-dev
+                libxcb-xinerama0-dev libxcb-shm0-dev libjack-jackd2-dev --yes
 
-if [ $BUILDLEVEL > 0 ] ; then
+if [ $BUILDLEVEL -gt 0 ] ; then
 
     # check or download apt-get-build script
     if [ ! -f $BUILDSCRIPT ];
@@ -71,6 +76,6 @@ cmake -DUNIX_STRUCTURE=1 -DCMAKE_INSTALL_PREFIX=/usr ..
 MAKEJOBS="-j$CORECOUNT"
 make $MAKEJOBS
 sudo checkinstall --pkgname=obs-studio --fstrans=no --backup=no \
-       --pkgversion="$(date +%Y%m%d)-git" --deldoc=yes
+       --pkgversion="$(date +%Y%m%d)-git" --deldoc=yes --default
 
 echo "script ended"
