@@ -11,10 +11,19 @@
 #export DEB_CFLAGS_PREPEND="-march=bdver2 -mprefer-avx128 -mvzeroupper -pipe"
 #export DEB_CXXFLAGS_PREPEND="-march=bdver2 -mprefer-avx128 -mvzeroupper -pipe"
 
+# Require sudo privileges
+ROOTUID="0"
+if [ "$(id -u)" -ne "$ROOTUID" ] ; then
+    echo "This script must be executed with root/sudo privileges!"
+    exit 1
+fi
 
-# Constants & Variables #
-
+# read number of cores
 CORECOUNT=`nproc`
+# core count + 1 is recommend -j argument for make
+((CORECOUNT+=1))
+
+export CONCURRENCY_LEVEL=$CORECOUNT
 
 BUILDSCRIPT="apt-get-build.sh"
 
@@ -31,13 +40,6 @@ fi
 # read first argument as buildlevel
 BUILDLEVEL=$1;
 
-# Require sudo privileges
-ROOTUID="0"
-if [ "$(id -u)" -ne "$ROOTUID" ] ; then
-    echo "This script must be executed with root/sudo privileges!"
-    exit 1
-fi
-
 # Install required *-dev packages
 apt-get install libx11-dev libgl-dev libpulse-dev libxcomposite-dev \
                 libxinerama-dev libv4l-dev libudev-dev libfreetype6-dev \
@@ -49,7 +51,7 @@ if [ $BUILDLEVEL > 0 ] ; then
     # check or download apt-get-build script
     if [ ! -f $BUILDSCRIPT ];
     then
-        wget https://gist.githubusercontent.com/SHOTbyGUN/9ca9494155c214e08c10/raw/444731da57ebd32d9a63a548ff43367fc4004bca/apt-get-build.sh
+        wget https://raw.githubusercontent.com/SHOTbyGUN/obs-debian-easyinstall/master/resources/apt-get-build.sh
         chmod +x apt-get-build.sh
     fi
 
@@ -57,7 +59,7 @@ if [ $BUILDLEVEL > 0 ] ; then
     ./apt-get-build.sh ffmpeg --yes
 else
     # install ffmpeg
-    apt-get install ffmpeg
+    apt-get install ffmpeg --yes
 fi
 
 # lastly build OBS
