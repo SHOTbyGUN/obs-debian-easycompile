@@ -8,18 +8,28 @@
 #export CFLAGS="-march=bdver2 -mprefer-avx128 -mvzeroupper -O2 -pipe"
 #export CXXFLAGS="${CFLAGS}"
 #
-#export CONCURRENCY_LEVEL=9
-#
 #export DEB_CFLAGS_PREPEND="-march=bdver2 -mprefer-avx128 -mvzeroupper -pipe"
 #export DEB_CXXFLAGS_PREPEND="-march=bdver2 -mprefer-avx128 -mvzeroupper -pipe"
 
 
 # Constants & Variables #
 
+CORECOUNT=`nproc`
+
 BUILDSCRIPT="apt-get-build.sh"
 declare -a REQUIREDLIBRARIES=("libx11-dev" "libgl-dev" "libpulse-dev" "libxcomposite-dev" "libxinerama-dev" "libv4l-dev" "libudev-dev" "libfreetype6-dev" "libfontconfig-dev" "qtbase5-dev" "libqt5x11extras5-dev" "libx264-dev" "libxcb-xinerama0-dev" "libxcb-shm0-dev" "libjack-jackd2-dev")
 
-BUILDLEVEL=0;
+# read arg1 as buildlevel
+# check arg1
+re='^[0-2]+$'
+if ! [[ $1 =~ $re ]] ; then
+    echo "error: Give number as argument" >&2;
+    echo "0 to install only";
+    echo "1 to compile ffmpeg";
+    exit 1
+fi
+
+BUILDLEVEL=$1;
 
 # Require sudo privileges
 ROOTUID="0"
@@ -28,16 +38,36 @@ if [ "$(id -u)" -ne "$ROOTUID" ] ; then
     exit 1
 fi
 
-for i in "$@"
-do
-   if [
-   
-done
+# Install required *-dev packages
+apt-get install libx11-dev libgl-dev libpulse-dev libxcomposite-dev \
+                libxinerama-dev libv4l-dev libudev-dev libfreetype6-dev \
+                libfontconfig-dev qtbase5-dev libqt5x11extras5-dev libx264-dev \
+                libxcb-xinerama0-dev libxcb-shm0-dev libjack-jackd2-dev
 
-if [ ! -f $BUILDSCRIPT ];
-then
-    wget https://gist.githubusercontent.com/SHOTbyGUN/9ca9494155c214e08c10/raw/444731da57ebd32d9a63a548ff43367fc4004bca/apt-get-build.sh
-    chmod +x apt-get-build.sh
+if [ $BUILDLEVEL > 0 ] ; then
+
+    # check or download apt-get-build script
+    if [ ! -f $BUILDSCRIPT ];
+    then
+        wget https://gist.githubusercontent.com/SHOTbyGUN/9ca9494155c214e08c10/raw/444731da57ebd32d9a63a548ff43367fc4004bca/apt-get-build.sh
+        chmod +x apt-get-build.sh
+    fi
+
+    # build ffmpeg
+    ./apt-get-build.sh ffmpeg --yes
+else
+    # install ffmpeg
+    apt-get install ffmpeg
 fi
 
+# lastly build OBS
+
+git clone https://github.com/jp9000/obs-studio.git
+cd obs-studio
+mkdir build && cd build
+cmake -DUNIX_STRUCTURE=1 -DCMAKE_INSTALL_PREFIX=/usr ..
+MAKEJOBS="-j$CORECOUNT"
+make $MAKEJOBS
+sudo checkinstall --pkgname=obs-studio --fstrans=no --backup=no \
+       --pkgversion="$(date +%Y%m%d)-git" --deldoc=yes
 
