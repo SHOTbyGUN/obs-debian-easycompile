@@ -4,8 +4,10 @@
 
 # CUSTOM BUILD FLAGS
 # Read more: https://wiki.gentoo.org/wiki/GCC_optimization
-# Modify these exports if you want to optimize your full obs installation for your current processor only. Compiled .deb packages dont work on any other processor if you specify -march flag for example.
 #
+# Advanced compiling flags
+# Uncomment and modify these if you know what you are doing
+# Example flags below are for AMD FX-8350 processor
 #
 #export CFLAGS="-march=bdver2 -mprefer-avx128 -mvzeroupper -O2 -pipe"
 #export CXXFLAGS="${CFLAGS}"
@@ -26,54 +28,35 @@ CORECOUNT=`nproc`
 ((CORECOUNT+=1))
 
 export CONCURRENCY_LEVEL=$CORECOUNT
-
-BUILDSCRIPT="apt-get-build.sh"
-
-
-# check arg1
-re='^[0-2]+$'
-if ! [[ $1 =~ $re ]] ; then
-    echo "error: Give number as argument" >&2;
-    echo "0 to install only";
-    echo "1 to compile ffmpeg";
-    exit 1
-fi
-
-# read first argument as buildlevel
-BUILDLEVEL=$1;
+MAKEJOBS="-j$CORECOUNT"
 
 # install required building tools
 apt-get install build-essential pkg-config cmake git checkinstall --yes
 
 # Install required *-dev packages
-apt-get install libx11-dev libgl-dev libpulse-dev libxcomposite-dev \
+apt-get install libx11-dev libgl1-mesa-dev libpulse-dev libxcomposite-dev \
                 libxinerama-dev libv4l-dev libudev-dev libfreetype6-dev \
                 libfontconfig-dev qtbase5-dev libqt5x11extras5-dev libx264-dev \
-                libxcb-xinerama0-dev libxcb-shm0-dev libjack-jackd2-dev --yes
+                libxcb-xinerama0-dev libxcb-shm0-dev libjack-jackd2-dev \
+                libcurl4-openssl-dev --yes
 
-if [ $BUILDLEVEL -gt 0 ] ; then
+# build ffmpeg from git
 
-    # check or download apt-get-build script
-    if [ ! -f $BUILDSCRIPT ];
-    then
-        wget https://raw.githubusercontent.com/SHOTbyGUN/obs-debian-easyinstall/master/resources/apt-get-build.sh
-        chmod +x apt-get-build.sh
-    fi
+sudo apt-get install zlib1g-dev yasm
+git clone --depth 1 git://source.ffmpeg.org/ffmpeg.git
+cd ffmpeg
+./configure --enable-shared --prefix=/usr
+make $MAKEJOBS
+sudo checkinstall --pkgname=FFmpeg --fstrans=no --backup=no \
+        --pkgversion="$(date +%Y%m%d)-git" --deldoc=yes --default
+cd ..
 
-    # build ffmpeg
-    ./apt-get-build.sh ffmpeg --yes
-else
-    # install ffmpeg
-    apt-get install ffmpeg --yes
-fi
-
-# lastly build OBS
+# lastly build OBS from git
 
 git clone https://github.com/jp9000/obs-studio.git
 cd obs-studio
 mkdir build && cd build
 cmake -DUNIX_STRUCTURE=1 -DCMAKE_INSTALL_PREFIX=/usr ..
-MAKEJOBS="-j$CORECOUNT"
 make $MAKEJOBS
 sudo checkinstall --pkgname=obs-studio --fstrans=no --backup=no \
        --pkgversion="$(date +%Y%m%d)-git" --deldoc=yes --default
