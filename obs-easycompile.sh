@@ -17,9 +17,8 @@
 CORECOUNT=`nproc`
 
 BUILDSCRIPT="apt-get-build.sh"
-declare -a REQUIREDLIBRARIES=("libx11-dev" "libgl-dev" "libpulse-dev" "libxcomposite-dev" "libxinerama-dev" "libv4l-dev" "libudev-dev" "libfreetype6-dev" "libfontconfig-dev" "qtbase5-dev" "libqt5x11extras5-dev" "libx264-dev" "libxcb-xinerama0-dev" "libxcb-shm0-dev" "libjack-jackd2-dev")
 
-# read arg1 as buildlevel
+
 # check arg1
 re='^[0-2]+$'
 if ! [[ $1 =~ $re ]] ; then
@@ -29,6 +28,7 @@ if ! [[ $1 =~ $re ]] ; then
     exit 1
 fi
 
+# read first argument as buildlevel
 BUILDLEVEL=$1;
 
 # Require sudo privileges
@@ -71,3 +71,4 @@ make $MAKEJOBS
 sudo checkinstall --pkgname=obs-studio --fstrans=no --backup=no \
        --pkgversion="$(date +%Y%m%d)-git" --deldoc=yes
 
+echo "script ended"
