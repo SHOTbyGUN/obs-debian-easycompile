@@ -17,7 +17,9 @@
 # Constants & Variables #
 
 BUILDSCRIPT="apt-get-build.sh"
+declare -a REQUIREDLIBRARIES=("libx11-dev" "libgl-dev" "libpulse-dev" "libxcomposite-dev" "libxinerama-dev" "libv4l-dev" "libudev-dev" "libfreetype6-dev" "libfontconfig-dev" "qtbase5-dev" "libqt5x11extras5-dev" "libx264-dev" "libxcb-xinerama0-dev" "libxcb-shm0-dev" "libjack-jackd2-dev")
 
+BUILDLEVEL=0;
 
 # Require sudo privileges
 ROOTUID="0"
@@ -26,7 +28,11 @@ if [ "$(id -u)" -ne "$ROOTUID" ] ; then
     exit 1
 fi
 
-
+for i in "$@"
+do
+   if [
+   
+done
 
 if [ ! -f $BUILDSCRIPT ];
 then
