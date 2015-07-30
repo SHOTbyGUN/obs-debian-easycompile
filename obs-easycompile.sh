@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # this script is based on https://github.com/jp9000/obs-studio/blob/master/INSTALL#L190 debian installation guide
+# use it as main guide when updating this script
 
 # CUSTOM BUILD FLAGS
 # Read more: https://wiki.gentoo.org/wiki/GCC_optimization
