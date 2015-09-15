@@ -12,7 +12,9 @@
 # How to use?
 
 wget https://raw.githubusercontent.com/SHOTbyGUN/obs-debian-easycompile/master/obs-easycompile.sh
+
 chmod +x obs-easycompile.sh
+
 sudo ./obs-easycompile.sh
 
 
