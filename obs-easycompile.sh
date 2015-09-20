@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# this script is based on https://github.com/jp9000/obs-studio/blob/master/INSTALL#L190 debian installation guide
+# this script is based on  debian installation guide from:
+# https://github.com/jp9000/obs-studio/wiki/Install-Instructions
 # use it as main guide when updating this script
 
 # CUSTOM BUILD FLAGS
@@ -18,10 +19,13 @@
 
 # Variables
 skip_init=false
+compile_x264=true
+compile_x265=false
 force_ffmpeg=false
 force_obs=false
 skip_owner=false
 override_threads=0
+workdir=$(pwd)"/workdir"
 
 # Help text
 help_text="allowed switches:
@@ -29,7 +33,9 @@ help_text="allowed switches:
  --force-ffmpeg     removes ffmpeg directory
  --force-obs        removes obs directory
  --skip-owner       skips chown resetting to directory default
- -t= | --threads=   set number of threads used manually default = number of cores"
+ --enable-x265      compile & install the experimental x265 encoder
+ -t= | --threads=   set number of threads used manually default = number of cores
+ -o= | --out=       specify output directory what script will use"
 
 # read arguments
 for i in $@; do
@@ -51,8 +57,18 @@ for i in $@; do
             skip_owner=true;
             ;;
 
+        --enable-x265)
+            compile_x265=true;
+            # assume you already compiled ffmpeg without x265, so we need to do it again
+            force_ffmpeg=true;
+            ;;
+
         -t=*|--threads=*)
             override_threads="${i#*=}"
+            ;;
+
+        -o=*|--out=*)
+            workdir="${i#*=}"
             ;;
         
         -h|--help)
@@ -102,15 +118,85 @@ if ! $skip_init; then
                     libxcb-xinerama0-dev libxcb-shm0-dev libjack-jackd2-dev \
                     libcurl4-openssl-dev --yes
 
-    apt-get install zlib1g-dev yasm --yes
+    # ffmpeg requirements:
+
+    apt-get install autoconf automake libass-dev libsdl1.2-dev libtheora-dev libtool \
+                    libva-dev libvdpau-dev libvorbis-dev libxcb1-dev \
+                    libxcb-xfixes0-dev texi2html zlib1g-dev yasm \
+                    libmp3lame-dev --yes
 
 fi
 
 
+# create directories
+mkdir -p $workdir --verbose ||
+    (
+        echo "fatal: unable to create working directory: $workdir"
+        exit 1;
+    )
 
+# these sections are based on ffmpeg compilation guide:
+# https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu
+
+
+
+if $compile_x264; then
+
+    cd $workdir
+
+    echo "removing previous x264 files"
+    rm -r x264*
+
+    git clone --depth 1 git://git.videolan.org/x264.git
+    cd x264
+
+    # apply patch if still not fixed in HEAD
+    brokenHash="e86f3a1993234e8f26050c243aa253651200fa6b"
+    testHash=$(git rev-parse HEAD)
+
+    if [ "$brokenHash" == "$testHash" ]; then
+        echo "applying patch to x264"
+        wget -O p.patch "http://git.videolan.org/?p=x264/x264-sandbox.git;a=patch;h=235f389e1d39ac662dc40ff21196d91c61314261"
+        git am -3 p.patch
+    fi
+
+
+    ./configure --enable-static --enable-shared
+    make $MAKEJOBS
+    checkinstall -D --pkgname=x264 --fstrans=no --backup=no \
+        --pkgversion="$(date +%Y%m%d)-git" --deldoc=yes --default
+
+fi
+
+ffmpegEnableX265=""
+
+if $compile_x265; then
+
+    ffmpegEnableX265="--enable-libx265"
+
+    apt-get install cmake mercurial
+    cd $workdir
+
+    hg clone http://hg.videolan.org/x265
+    cd x265/build/linux
+    cmake -G "Unix Makefiles" ../../source
+    make $MAKEJOBS
+    checkinstall -D --default --backup=no
+
+fi
+
+# ffmpeg ./configure could not find shared fdk-aac installation
+# so install libfaac instead
+
+apt-get install libfaac-dev
+
+# run ldconfig
+ldconfig
 
 
 # build ffmpeg from git
+
+cd $workdir
 
 if $force_ffmpeg; then
     rm -rf ffmpeg/
@@ -120,13 +206,17 @@ fi
 if [ ! -d ffmpeg ]; then
     git clone --depth 1 git://source.ffmpeg.org/ffmpeg.git
     cd ffmpeg
-    ./configure --enable-shared --prefix=/usr
+    ./configure --enable-static --enable-shared --enable-nonfree --enable-gpl \
+        --enable-libx264 --enable-x11grab --enable-libfaac  $ffmpegEnableX265
     make $MAKEJOBS
-    checkinstall --pkgname=FFmpeg --fstrans=no --backup=no \
-            --pkgversion="$(date +%Y%m%d)-git" --deldoc=yes --default
-    cd ..
+    checkinstall -D --pkgname=FFmpeg --fstrans=no --backup=no \
+        --pkgversion="$(date +%Y%m%d)-git" --deldoc=yes --default
 fi
 
+# run ldconfig again
+ldconfig
+
+cd $workdir
 
 # if --force-obs then delete obs-studio directory
 if $force_obs; then
@@ -150,13 +240,15 @@ fi
 mkdir build && cd build
 cmake -DUNIX_STRUCTURE=1 -DCMAKE_INSTALL_PREFIX=/usr ..
 make $MAKEJOBS
-checkinstall --pkgname=obs-studio --fstrans=no --backup=no \
-       --pkgversion="$(date +%Y%m%d)-git" --deldoc=yes --default
+checkinstall -D --pkgname=obs-studio --fstrans=no --backup=no \
+    --pkgversion="$(date +%Y%m%d)-git" --deldoc=yes --default
 cd ../..
 
 
 # change file ownerships to owner of the current directory
 if ! $skip_owner; then
+
+    cd $workdir
     
     # get owner of current directory
     owner=$(stat -c "%U %G" .)
