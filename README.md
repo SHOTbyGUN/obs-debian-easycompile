@@ -1,22 +1,25 @@
 # obs-debian-easycompile
-3rd party script to make multiplatform obs by obsproject.com installation and or building easy as possible.
+3rd party script to make multiplatform obs by http://obsproject.com installation and building easy as possible.
 
 # What does it do?
 
-1. Installs required packages for compiling and building
-2. Downloads ffmpeg sources from git repo into ffmpeg directory
-3. Compiles and installs ffmpeg packages
-4. Downloads multiplatform obs sources from git repo into mpobs directory
-5. Compiles and installs obs
+1. Installs required packages for compiling
+2. Downloads x264, [x265] ffmpeg and obs-studio sources directly from git
+3. Compiles and installs packages
+
 
 # How to use?
 
 wget https://raw.githubusercontent.com/SHOTbyGUN/obs-debian-easycompile/master/obs-easycompile.sh
-
 chmod +x obs-easycompile.sh
-
 sudo ./obs-easycompile.sh
 
+# Notes
+
+Because sources are fetched directly from git, you get the latest version available.
+But this also means that there could be more bugs. Just keep that in mind.
 
 Feel free to contribute!
-Tested on Debian Jessie
+Tested on Debian Jessie & Stitch
+
+Please report any issues you might find with the script.
