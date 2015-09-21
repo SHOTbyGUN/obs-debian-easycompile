@@ -7,15 +7,19 @@
 # CUSTOM BUILD FLAGS
 # Read more: https://wiki.gentoo.org/wiki/GCC_optimization
 #
-# Advanced compiling flags
-# Uncomment and modify these if you know what you are doing
+# modify these if you know what you are doing
 # Example flags below are for AMD FX-8350 processor
+#   "-march=bdver2 -mprefer-avx128 -mvzeroupper -O3 -pipe"
+
+
+# march=native will optimize code for your current processor, thus will not work on any other system
+# -O3 is highest optimization level, which is good for encoding purposes
+export CFLAGS="-march=native -O3 -pipe"
+export CXXFLAGS="${CFLAGS}"
 #
-#export CFLAGS="-march=bdver2 -mprefer-avx128 -mvzeroupper -O2 -pipe"
-#export CXXFLAGS="${CFLAGS}"
-#
-#export DEB_CFLAGS_PREPEND="-march=bdver2 -mprefer-avx128 -mvzeroupper -pipe"
-#export DEB_CXXFLAGS_PREPEND="-march=bdver2 -mprefer-avx128 -mvzeroupper -pipe"
+export DEB_CFLAGS_PREPEND="-march=native -pipe"
+export DEB_CXXFLAGS_PREPEND="-march=native -pipe"
+
 
 # Variables
 skip_init=false
@@ -145,7 +149,7 @@ if $compile_x264; then
     cd $workdir
 
     echo "removing previous x264 files"
-    rm -r x264*
+    rm -r x264* --verbose
 
     git clone --depth 1 git://git.videolan.org/x264.git
     cd x264
@@ -171,6 +175,9 @@ fi
 ffmpegEnableX265=""
 
 if $compile_x265; then
+
+    echo "removing previous x265 files"
+    rm -r x265* --verbose
 
     ffmpegEnableX265="--enable-libx265"
 
@@ -245,7 +252,7 @@ checkinstall -D --pkgname=obs-studio --fstrans=no --backup=no \
 cd ../..
 
 
-# change file ownerships to owner of the current directory
+# change file ownerships to owner of the parent directory
 if ! $skip_owner; then
 
     cd $workdir
