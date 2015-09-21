@@ -4,7 +4,7 @@
 # What does it do?
 
 1. Installs required packages for compiling
-2. Downloads x264, [x265] ffmpeg and obs-studio sources directly from git
+2. Downloads x264, [x265 optional], ffmpeg and obs-studio sources directly from git
 3. Compiles and installs packages
 
 
