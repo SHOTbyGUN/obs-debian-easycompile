@@ -1,5 +1,5 @@
 # obs-debian-easycompile
-3rd party script to make multiplatform obs by http://obsproject.com installation and building easy as possible.
+unofficial script to make multiplatform obs by http://obsproject.com installation and building easy as possible.
 
 # What does it do?
 
