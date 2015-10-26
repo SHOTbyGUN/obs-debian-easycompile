@@ -14,11 +14,12 @@
 
 # march=native will optimize code for your current processor, thus will not work on any other system
 # -O3 is highest optimization level, which is good for encoding purposes
-export CFLAGS="-march=native -O3 -pipe"
-export CXXFLAGS="${CFLAGS}"
+
+# export CFLAGS="-march=native -O3 -pipe"
+# export CXXFLAGS="${CFLAGS}"
 #
-export DEB_CFLAGS_PREPEND="-march=native -pipe"
-export DEB_CXXFLAGS_PREPEND="-march=native -pipe"
+# export DEB_CFLAGS_PREPEND="-march=native -pipe"
+# export DEB_CXXFLAGS_PREPEND="-march=native -pipe"
 
 
 # Variables
